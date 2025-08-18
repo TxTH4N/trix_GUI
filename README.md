@@ -51,7 +51,8 @@ Where `instrument` and the temperature column label are provided in the UI.
    python trix_gui.py
    python fit_gaussian_peaks.py
    ```
-
+Or
+run trix_gui.py in PyCharm (VS code)
 ---
 
 ## Usage
