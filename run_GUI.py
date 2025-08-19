@@ -156,7 +156,7 @@ class MainWindow(QMainWindow):
         self.temp_label_edit.setPlaceholderText("Temperature column header in file (e.g., T_sample)")
 
         self.colors_edit = QLineEdit()
-        self.colors_edit.setPlaceholderText("Colors (optional): e.g. C0,3*C1,#1f77b4,red,#00aa55,black")
+        self.colors_edit.setPlaceholderText("Colors (optional): e.g. C0, 3*C1, #1f77b4, red, #00aa55, black")
         pick_colors_btn = QPushButton("Pick Colors…")
         pick_colors_btn.clicked.connect(self.on_pick_colors)
 
