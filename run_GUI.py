@@ -84,7 +84,10 @@ def parse_colors(spec: str, n: int) -> List[Optional[str]]:
             break
         elif '*' in part:
             nums, color = part.split('*')
-            nums = int(nums)
+            try:
+                nums = int(nums)
+            except:
+                raise ValueError(f"Invalid color format: '{spec}', use format of number*color")
             out[idx:idx+nums] = [color]*nums
             idx += nums
         else:
@@ -153,7 +156,7 @@ class MainWindow(QMainWindow):
         self.temp_label_edit.setPlaceholderText("Temperature column header in file (e.g., T_sample)")
 
         self.colors_edit = QLineEdit()
-        self.colors_edit.setPlaceholderText("Colors (optional): e.g. C0,#1f77b4,red,#00aa55,black")
+        self.colors_edit.setPlaceholderText("Colors (optional): e.g. C0,3*C1,#1f77b4,red,#00aa55,black")
         pick_colors_btn = QPushButton("Pick Colors…")
         pick_colors_btn.clicked.connect(self.on_pick_colors)
 
