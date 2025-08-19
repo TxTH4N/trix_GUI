@@ -150,7 +150,7 @@ class MainWindow(QMainWindow):
 
         # Multi-run entry
         self.run_edit = QLineEdit()
-        self.run_edit.setPlaceholderText("Run(s): e.g. 12,14,18-21,(7,15,2)")
+        self.run_edit.setPlaceholderText("Run(s): e.g. 12, 14, 18-21, (7, 15, 2)")
 
         self.temp_label_edit = QLineEdit()
         self.temp_label_edit.setPlaceholderText("Temperature column header in file (e.g., T_sample)")
@@ -272,7 +272,7 @@ class MainWindow(QMainWindow):
                 raise ValueError("Temperature label cannot be empty (must match the file header).")
             runs = parse_runs(run_spec)
             if not runs:
-                raise ValueError("Please enter at least one run number (e.g. '12,14,18-21').")
+                raise ValueError("Please enter at least one run number (e.g. '12, 14, 18-21').")
 
             colors = parse_colors(color_spec, len(runs))
             if self.clear_check.isChecked():
