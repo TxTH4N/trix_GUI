@@ -8,7 +8,7 @@ Python GUIs for triple-axis neutron spectroscopy data loading, visualization, an
 - Results table shows amplitude, center, sigma, **FWHM**, and background.
 ## Example Fits
 <p float="left">
-  <img src="Fitting.png" width=300 />
+  <img src="Fitting_para.png" width=300 />
   <img src="Fitted_result.png" width=500 />
 </p>
 ---
