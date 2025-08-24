@@ -7,8 +7,8 @@ Python GUIs for triple-axis neutron spectroscopy data loading, visualization, an
 - Gaussian(s) + linear background fit using **lmfit** with **yerr** as weights.
 - Results table shows amplitude, center, sigma, **FWHM**, and background.
 ## Example Fits
-- <img src="Fitting.png" width="100">
-- <img src="Residuals.png" width="300">
+- <img src="Fitting.png" width="300">
+- <img src="Fitted_result.png" width="500">
 ---
 
 ## Features
