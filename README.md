@@ -11,11 +11,14 @@ Python GUIs for triple-axis neutron spectroscopy data loading, visualization, an
   <img src="Fitting_para.png" width=300 />
   <img src="Fitted_result.png" width=500 />
 </p>
----
+
 
 ## Features
 - **`trix_gui.py`** – Load and overplot one or more runs; custom per-run colors; interactive pan/zoom toolbar; save figure.
 
+<p float="left">
+  <img src="setting.png" width=500 />
+</p>
 [//]: # (- **`fit_gaussian_peaks.py`** – Fit *N* Gaussian peaks + linear background using `lmfit`, with `yerr` as weights; table of parameters and 1σ uncertainties; plots total fit and components.)
 - **`load_triX_murr.py`** – Your data loader exposing class `import_triX_single` used by both apps.
 ---
