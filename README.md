@@ -19,7 +19,7 @@ Python GUIs for triple-axis neutron spectroscopy data loading, visualization, an
 
 
 ## Features
-- **`trix_gui.py`** – Load and overplot one or more runs; custom per-run colors; interactive pan/zoom toolbar; save figure.
+- **`run_GUI.py`** – Load and overplot one or more runs; custom per-run colors; interactive pan/zoom toolbar; save figure.
 
 <p float="left">
   <img src="setting.png" width=500 />
@@ -56,7 +56,7 @@ Where `instrument` and the temperature column label are provided in the UI.
 
 1. Place all files in one folder:
    - `load_triX.py`
-   - `trix_gui.py`
+   - `run_GUI.py`
    - `requirements.txt`
 2. Create & activate a virtual environment (recommended), then:
    ```bash
@@ -64,8 +64,7 @@ Where `instrument` and the temperature column label are provided in the UI.
    ```
 3. Launch the GUIs:
    ```bash
-   python trix_gui.py
-   python fit_gaussian_peaks.py
+   python run_GUI.py
    ```
 Or
 run trix_gui.py in PyCharm (VS code)
