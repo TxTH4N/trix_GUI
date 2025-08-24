@@ -7,7 +7,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFileDialog, QMessageBox,
     QLabel, QLineEdit, QPushButton, QCheckBox, QSpinBox, QGridLayout,
-    QHBoxLayout, QVBoxLayout, QStatusBar, QColorDialog,QDialog, QDialogButtonBox, QComboBox
+    QHBoxLayout, QVBoxLayout, QStatusBar, QColorDialog,QDialog, QDialogButtonBox, QComboBox,
+    QTableWidget, QTableWidgetItem, QHeaderView,QSplitter
 )
 
 # Matplotlib Qt canvas
@@ -135,7 +136,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("TriX Data Loader")
-        self.setMinimumSize(1100, 680)
+        # self.setMinimumSize(1100, 680)
+        self.resize(800, 1000)
 
         # Widgets
         self.path_edit = QLineEdit()
@@ -220,9 +222,39 @@ class MainWindow(QMainWindow):
 
         top = QWidget()
         top_layout = QVBoxLayout(top)
-        top_layout.addLayout(form)
-        top_layout.addWidget(self.toolbar)
-        top_layout.addWidget(self.canvas, 1)
+        # top_layout.addLayout(form)
+        # top_layout.addWidget(self.toolbar)
+        # top_layout.addWidget(self.canvas, 1)
+        #
+        # self.fit_table = QTableWidget(0, 5, self)
+        # self.fit_table.setHorizontalHeaderLabels(["Component", "Amplitude (area)", "Center", "Sigma", "FWHM"])
+        # self.fit_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        # top_layout.addWidget(self.fit_table)
+        # ---- Controls panel----
+        controls = QWidget(self)
+        controls.setLayout(form)
+        # ---- Plot panel (toolbar + canvas) ----
+        plot_panel = QWidget(self)
+        plot_v = QVBoxLayout(plot_panel)
+        plot_v.setContentsMargins(0, 0, 0, 0)
+        plot_v.addWidget(self.toolbar)
+        plot_v.addWidget(self.canvas, 1)
+        # ---- Fit results table ----
+        self.fit_table = QTableWidget(0, 5, self)
+        self.fit_table.setHorizontalHeaderLabels(["Component", "Amplitude (area)", "Center", "Sigma", "FWHM"])
+        self.fit_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        # self.fit_table.setMaximumHeight(100)
+        # ---- Vertical splitter with starting ratio (controls : plot : table) ----
+        splitter = QSplitter(Qt.Vertical, self)
+        splitter.addWidget(controls)
+        splitter.addWidget(plot_panel)
+        splitter.addWidget(self.fit_table)
+        splitter.setSizes([200, 520, 120])
+        # Make the plot prefer to grow/shrink
+        splitter.setStretchFactor(0, 0)  # controls
+        splitter.setStretchFactor(1, 1)  # plot gets the stretch
+        splitter.setStretchFactor(2, 0)  # table
+        top_layout.addWidget(splitter)
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
@@ -410,9 +442,74 @@ class MainWindow(QMainWindow):
 
             self.canvas.refresh(title=self.canvas.ax.get_title(), xlabel=self._xlabel_current)
             self.statusBar().showMessage(f"Fit run {run_id:04d} complete. redχ²={result.redchi:.3g}", 6000)
-            # print(result.fit_report())  # optional
+            # msg = "\n".join(
+            #     f"{name}: {par.value:.4g} ± {par.stderr:.2g}" if par.stderr is not None else f"{name}: {par.value:.4g}"
+            #     for name, par in result.params.items()
+            # )
+            # QMessageBox.information(self, "Fit results", msg)
+            self._populate_fit_table(result, npeaks, run_id)
         except Exception as e:
             QMessageBox.critical(self, "Fit failed", str(e))
+
+    def _populate_fit_table(self, result, npeaks: int, run_id: int):
+        """Fill the table with background + Gaussian component parameters and 1σ uncertainties."""
+        # rows: 1 background + npeaks gaussians
+        rows = 1 + npeaks
+        self.fit_table.setRowCount(rows)
+
+        # Background row: merged across all columns
+        row = 0
+        try:
+            b_slope = result.params["bg_slope"]
+            b_inter = result.params["bg_intercept"]
+            slope_txt = f"{b_slope.value:.4g} ± {b_slope.stderr:.2g}" if b_slope.stderr is not None else f"{b_slope.value:.4g}"
+            inter_txt = f"{b_inter.value:.4g} ± {b_inter.stderr:.2g}" if b_inter.stderr is not None else f"{b_inter.value:.4g}"
+            txt = f"Background: slope={slope_txt}, intercept={inter_txt}"
+        except Exception:
+            txt = "Background parameters unavailable"
+
+        self.fit_table.setSpan(row, 0, 1, self.fit_table.columnCount())  # merge full row
+        item = QTableWidgetItem(txt)
+        item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+        self.fit_table.setItem(row, 0, item)
+
+        # Gaussians
+        for i in range(npeaks):
+            comp = f"g{i} (run {run_id:04d})"
+            amp = result.params.get(f"g{i}_amplitude", None)
+            cen = result.params.get(f"g{i}_center", None)
+            sig = result.params.get(f"g{i}_sigma", None)
+
+            def fmt(p):
+                if p is None:
+                    return "—"
+                if p.stderr is not None:
+                    return f"{p.value:.6g} ± {p.stderr:.2g}"
+                return f"{p.value:.6g}"
+
+            amp_txt = fmt(amp)
+            cen_txt = fmt(cen)
+            sig_txt = fmt(sig)
+
+            # FWHM = 2*sqrt(2*ln2)*sigma
+            try:
+                fwhm_val = 2.0 * np.sqrt(2.0 * np.log(2.0)) * sig.value
+                fwhm_err = None if (sig.stderr is None) else 2.0 * np.sqrt(2.0 * np.log(2.0)) * sig.stderr
+                if fwhm_err is not None:
+                    fwhm_txt = f"{fwhm_val:.6g} ± {fwhm_err:.2g}"
+                else:
+                    fwhm_txt = f"{fwhm_val:.6g}"
+            except Exception:
+                fwhm_txt = "—"
+
+            self._set_fit_row(i + 1, comp, amp_txt, cen_txt, sig_txt, fwhm_txt)
+
+    def _set_fit_row(self, row: int, comp: str, amp: str, cen: str, sig: str, fwhm: str):
+        items = [comp, amp, cen, sig, fwhm]
+        for col, text in enumerate(items):
+            it = QTableWidgetItem(text)
+            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+            self.fit_table.setItem(row, col, it)
 
 
 class FitDialog(QDialog):
@@ -439,18 +536,18 @@ class FitDialog(QDialog):
 
         form = QGridLayout(self)
         r = 0
-        form.addWidget(QLabel("Run to fit"), r, 0);
-        form.addWidget(self.run_combo, r, 1);
+        form.addWidget(QLabel("Run to fit"), r, 0)
+        form.addWidget(self.run_combo, r, 1)
         r += 1
-        form.addWidget(QLabel("Num. of Gaussians"), r, 0);
-        form.addWidget(self.npeaks, r, 1);
+        form.addWidget(QLabel("Num. of Gaussians"), r, 0)
+        form.addWidget(self.npeaks, r, 1)
         r += 1
-        form.addWidget(self.auto_guess, r, 1);
+        form.addWidget(self.auto_guess, r, 1)
         r += 1
-        form.addWidget(QLabel("Centers"), r, 0);
-        form.addWidget(self.centers_edit, r, 1);
+        form.addWidget(QLabel("Centers"), r, 0)
+        form.addWidget(self.centers_edit, r, 1)
         r += 1
-        form.addWidget(self.show_components, r, 1);
+        form.addWidget(self.show_components, r, 1)
         r += 1
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
