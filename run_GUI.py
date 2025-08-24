@@ -7,13 +7,16 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFileDialog, QMessageBox,
     QLabel, QLineEdit, QPushButton, QCheckBox, QSpinBox, QGridLayout,
-    QHBoxLayout, QVBoxLayout, QStatusBar, QColorDialog
+    QHBoxLayout, QVBoxLayout, QStatusBar, QColorDialog,QDialog, QDialogButtonBox, QComboBox
 )
 
 # Matplotlib Qt canvas
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+
+import numpy as np
+from lmfit.models import GaussianModel, LinearModel
 
 # === Import the user's loading class ===
 try:
@@ -176,6 +179,10 @@ class MainWindow(QMainWindow):
         self.save_fig_btn.clicked.connect(self.on_save_fig)
         self.save_fig_btn.setEnabled(False)
 
+        self.fit_btn = QPushButton("Fit Peaks…")
+        self.fit_btn.clicked.connect(self.on_fit_button)
+        self.fit_btn.setEnabled(False)
+
         # Canvas + toolbar
         self.canvas = MplCanvas()
         self.toolbar = NavigationToolbar(self.canvas, self)
@@ -220,6 +227,7 @@ class MainWindow(QMainWindow):
         button_row = QHBoxLayout()
         button_row.addStretch(1)
         button_row.addWidget(self.save_fig_btn)
+        button_row.addWidget(self.fit_btn)
         top_layout.addLayout(button_row)
 
         self.setCentralWidget(top)
@@ -227,6 +235,8 @@ class MainWindow(QMainWindow):
 
         # State
         self._last_loaded = None  # type: Optional[dict]
+        self._data_by_run: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray, dict]] = {}
+        self._xlabel_current = "X"
 
     # --- UI Actions ---
     def on_browse(self):
@@ -277,6 +287,7 @@ class MainWindow(QMainWindow):
             colors = parse_colors(color_spec, len(runs))
             if self.clear_check.isChecked():
                 self.canvas.ax.clear()
+                self._data_by_run.clear()
 
             self.statusBar().showMessage("Loading…", 3000)
             loader = import_triX_single(instrument=instrument, exp=exp, label_T=temp_label)
@@ -287,12 +298,16 @@ class MainWindow(QMainWindow):
                 run_lbl = f"run {r:04d}"
                 self.canvas.plot_xy(x, y, yerr=yerr, label='{} - {} K'.format(run_lbl,label['temperature']), color=colors[i])
                 last_label_for_title = label
+                # cache data for fit
+                self._data_by_run[r] = (np.asarray(x), np.asarray(y), np.asarray(yerr), label)
+                self._xlabel_current = label.get('x', 'X')
 
             title = ""
             if last_label_for_title:
                 # title = f"{last_label_for_title.get('samplename','')}  T={last_label_for_title.get('temperature','?')}±{last_label_for_title.get('tem_error','?')} K"
                 title = f"{last_label_for_title.get('samplename', '')} Run(s) {run_spec}"
-            self.canvas.refresh(title=title,xlabel=label['x'])
+            # self.canvas.refresh(title=title,xlabel=label['x'])
+            self.canvas.refresh(title=title, xlabel=self._xlabel_current)
 
             self._last_loaded = {
                 'instrument': instrument, 'exp': exp, 'runs': runs,
@@ -302,6 +317,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(
                 f"Loaded runs: {', '.join(f'{r:04d}' for r in runs)} from exp{exp:04d}", 5000)
             self.save_fig_btn.setEnabled(True)
+            self.fit_btn.setEnabled(True if self._data_by_run else False)
         except Exception as e:
             QMessageBox.critical(self, "Load failed", str(e))
             self.statusBar().showMessage("Load failed", 5000)
@@ -323,6 +339,170 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Save failed", str(e))
 
+    def on_fit_button(self):
+        if not self._data_by_run:
+            QMessageBox.information(self, "Fit Peaks", "Load data first.")
+            return
+        run_ids = sorted(self._data_by_run.keys())
+        dlg = FitDialog(self, run_ids)
+        if dlg.exec():
+            run_id, npeaks, auto, show_components, centers = dlg.values()
+            self._fit_run(run_id, npeaks, auto, show_components, centers)
+
+    def _fit_run(self, run_id: int, npeaks: int, auto_guess: bool, show_components: bool,
+                 centers: Optional[List[float]] = None):
+        try:
+            if run_id not in self._data_by_run:
+                raise ValueError(f"Run {run_id:04d} not loaded.")
+            x, y, yerr, label = self._data_by_run[run_id]
+
+            # Linear background + sum of Gaussians
+            model = LinearModel(prefix='bg_')
+            params = model.make_params(intercept=float(np.median(y)), slope=0.0)
+
+            span = float(np.max(x) - np.min(x)) if len(x) > 1 else 1.0
+            sig0 = max(span / 20.0, 1e-6)
+
+            if auto_guess and not (centers and len(centers) >= 1):
+                idxs = np.argsort(y)[-npeaks:]
+                centers = list(np.sort(x[idxs]))
+                amps = [max(y[i], 0.0) * sig0 * np.sqrt(2 * np.pi) for i in idxs]
+            else:
+                if centers is None or len(centers) < npeaks:
+                    raise ValueError("Please provide at least as many centers as # of Gaussians.")
+                centers = centers[:npeaks]
+                amps = []
+                for c in centers:
+                    idx = int(np.clip(np.searchsorted(x, c), 0, len(x) - 1))
+                    amps.append(max(y[idx], 0.0) * sig0 * np.sqrt(2 * np.pi))
+            # else:
+            #     centers = list(np.linspace(np.min(x), np.max(x), npeaks))
+            #     amps = [max(np.max(y) * sig0 * np.sqrt(2 * np.pi), 1e-6)] * npeaks
+
+            for i in range(npeaks):
+                g = GaussianModel(prefix=f"g{i}_")
+                model = model + g
+                p = g.make_params(center=float(centers[i]), sigma=float(sig0), amplitude=float(amps[i]))
+                p[f"g{i}_sigma"].min = 1e-6
+                p[f"g{i}_center"].min = float(np.min(x))
+                p[f"g{i}_center"].max = float(np.max(x))
+                params.update(p)
+
+            # weights = 1 / yerr (safe)
+            yerr_arr = np.asarray(yerr)
+            if not np.any(yerr_arr > 0):
+                yerr_safe = np.ones_like(yerr_arr)
+            else:
+                pos = yerr_arr[yerr_arr > 0]
+                med = float(np.median(pos)) if len(pos) else 1.0
+                # med = float(1) if len(pos) else 1.0
+                yerr_safe = np.where((yerr_arr > 0) & np.isfinite(yerr_arr), yerr_arr, med)
+
+            result = model.fit(y, params, x=x, weights=1.0 / yerr_safe)
+
+            # overlay
+            self.canvas.ax.plot(x, result.best_fit, lw=2, label=f"Fit run {run_id:04d}")
+            if show_components:
+                comps = result.eval_components(x=x)
+                for name, ycomp in comps.items():
+                    if name.startswith('g'):
+                        self.canvas.ax.plot(x, ycomp, lw=1, alpha=0.8, label=f"{name[:-1]} (run {run_id:04d})")
+
+            self.canvas.refresh(title=self.canvas.ax.get_title(), xlabel=self._xlabel_current)
+            self.statusBar().showMessage(f"Fit run {run_id:04d} complete. redχ²={result.redchi:.3g}", 6000)
+            # print(result.fit_report())  # optional
+        except Exception as e:
+            QMessageBox.critical(self, "Fit failed", str(e))
+
+
+class FitDialog(QDialog):
+    """Dialog to pick run, number of peaks, and options."""
+    def __init__(self,parent,run_ids:List[int]):
+        super().__init__(parent)
+        self.setWindowTitle("Fit peaks")
+        self.setModal(True)
+        self.run_combo = QComboBox()
+        for r in run_ids:
+            self.run_combo.addItem(f"{r:04d}",r)
+
+        self.npeaks=QSpinBox()
+        self.npeaks.setRange(1,20)
+        self.npeaks.setValue(1)
+        self.auto_guess = QCheckBox("Auto-guess centers");
+        self.auto_guess.setChecked(True)
+        self.centers_edit = QLineEdit()
+        self.centers_edit.setPlaceholderText("Centers (comma-separated)")
+        self.centers_edit.setEnabled(False)
+        self.show_components = QCheckBox("Show individual peak components");
+        self.show_components.setChecked(True)
+
+
+        form = QGridLayout(self)
+        r = 0
+        form.addWidget(QLabel("Run to fit"), r, 0);
+        form.addWidget(self.run_combo, r, 1);
+        r += 1
+        form.addWidget(QLabel("Num. of Gaussians"), r, 0);
+        form.addWidget(self.npeaks, r, 1);
+        r += 1
+        form.addWidget(self.auto_guess, r, 1);
+        r += 1
+        form.addWidget(QLabel("Centers"), r, 0);
+        form.addWidget(self.centers_edit, r, 1);
+        r += 1
+        form.addWidget(self.show_components, r, 1);
+        r += 1
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self._try_accept)
+        buttons.rejected.connect(self.reject)
+        form.addWidget(buttons, r, 0, 1, 2)
+
+        self.npeaks.valueChanged.connect(self._update_centers_enabled)
+        self.auto_guess.toggled.connect(self._update_centers_enabled)
+        self._update_centers_enabled()
+        self._centers = None
+
+    def _update_centers_enabled(self):
+        need_centers = (int(self.npeaks.value()) >=2) or (not self.auto_guess.isChecked())
+        self.centers_edit.setEnabled(need_centers)
+
+    def _try_accept(self):
+        """Validate centers when required before accepting."""
+        need_centers = (int(self.npeaks.value()) >= 2) or (not self.auto_guess.isChecked())
+        self._centers = None
+        if need_centers:
+            txt = self.centers_edit.text().strip()
+            if not txt:
+                QMessageBox.warning(self, "Centers required","Please enter centers (comma-separated) when fitting ≥2 peaks\n""or when Auto-guess is disabled.")
+                return
+            try:
+                centers = [float(s) for s in txt.split(',') if s.strip()]
+            except ValueError:
+                QMessageBox.warning(self, "Invalid centers","Centers must be numbers separated by commas (e.g. 1.2, 3.4, 5.6).")
+                return
+            if len(centers) < int(self.npeaks.value()):
+                QMessageBox.warning(self, "Not enough centers",
+                                    f"Provided {len(centers)} center(s) but {int(self.npeaks.value())} required.")
+                return
+            self._centers = centers
+        else:
+            txt = self.centers_edit.text().strip()
+            if txt:
+                try:
+                    self._centers = [float(s) for s in txt.split(',') if s.strip()]
+                except ValueError:
+                    self._centers = None
+        self.accept()
+
+    def values(self):
+        return (
+            self.run_combo.currentData(),
+            int(self.npeaks.value()),
+            bool(self.auto_guess.isChecked()),
+            bool(self.show_components.isChecked()),
+            self._centers,
+        )
 
 def main():
     app = QApplication(sys.argv)
