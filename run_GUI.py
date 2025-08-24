@@ -1,3 +1,8 @@
+"""
+Written by Tianxiong Han
+2025.08.24
+A GUI for neutron triple axix spectroscopy to view and fit the lines.
+"""
 import sys
 import os
 from pathlib import Path
