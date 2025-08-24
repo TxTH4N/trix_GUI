@@ -1,6 +1,6 @@
 # TriX GUI Tools
 
-Python GUIs for triple-axis neutron spectroscopy data loading, visualization, and peak fitting (to be added).
+Python GUIs for triple-axis neutron spectroscopy data loading, visualization, and peak fitting.
 
 ## New (v0.2.1)
 - Allow to change the pannel height ratios between setting, plotting, and fit reports.
