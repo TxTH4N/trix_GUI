@@ -23,7 +23,7 @@ Python GUIs for triple-axis neutron spectroscopy data loading, visualization, an
   <img src="setting.png" width=500 />
 </p>
 
-- **`load_triX_murr.py`** – Your data loader exposing class `import_triX_single` used by both apps.
+- **`load_triX.py`** – Your data loader exposing class `import_triX_single` used by gui.
 ---
 
 ## Requirements
