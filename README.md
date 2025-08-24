@@ -2,6 +2,10 @@
 
 Python GUIs for triple-axis neutron spectroscopy data loading, visualization, and peak fitting (to be added).
 
+## New (v0.2.0)
+- Added **Fit Peaks…** dialog: choose run, number of Gaussians, auto-guess, manual centers.
+- Gaussian(s) + linear background fit using **lmfit** with **yerr** as weights.
+- Results table shows amplitude, center, sigma, **FWHM**, and background.
 ---
 
 ## Features
@@ -9,7 +13,6 @@ Python GUIs for triple-axis neutron spectroscopy data loading, visualization, an
 
 [//]: # (- **`fit_gaussian_peaks.py`** – Fit *N* Gaussian peaks + linear background using `lmfit`, with `yerr` as weights; table of parameters and 1σ uncertainties; plots total fit and components.)
 - **`load_triX_murr.py`** – Your data loader exposing class `import_triX_single` used by both apps.
-
 ---
 
 ## Requirements
