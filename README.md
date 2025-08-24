@@ -53,7 +53,7 @@ Where `instrument` and the temperature column label are provided in the UI.
 ## Quick start
 
 1. Place all files in one folder:
-   - `load_triX_murr.py`
+   - `load_triX.py`
    - `trix_gui.py`
    - `requirements.txt`
 2. Create & activate a virtual environment (recommended), then:
