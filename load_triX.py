@@ -1,11 +1,12 @@
 import numpy as np
 
-
-# #------ Written by Tianxiong Han ------#
-# #This file is for loading the data for triple-axis neutron spectroscopy
-# #Function of normalize to counts per seconds is optional
-# #May 3, 2024
-# #--------------------------------------#
+"""
+------ Written by Tianxiong Han ------
+This file is for loading the data for triple-axis neutron spectroscopy
+Function of normalize to counts per seconds is optional
+May 3, 2024
+--------------------------------------
+"""
 
 class import_triX_single:
     def __init__(self, instrument: str, exp: int, label_T: str):
