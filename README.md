@@ -2,6 +2,8 @@
 
 Python GUIs for triple-axis neutron spectroscopy data loading, visualization, and peak fitting.
 
+[//]: # (Author: Tianxiong Han, Iowa State University, 2025 Aug 24)
+
 ## New (v0.2.1)
 - Allow to change the pannel height ratios between setting, plotting, and fit reports.
 
