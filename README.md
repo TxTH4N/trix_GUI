@@ -93,3 +93,7 @@ run trix_gui.py in PyCharm (VS code)
 [//]: # (- The table lists amplitude &#40;area&#41;, center, σ and FWHM with 1σ uncertainties. The plot shows data, total fit, and per‑component curves.)
 
 ---
+
+喜欢就点个[Star][s] ⭐
+
+[s]: https://github.com/TxTH4N/trix_GUI "别想，先写个没bug的出来"
