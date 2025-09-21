@@ -94,6 +94,6 @@ run trix_gui.py in PyCharm (VS code)
 
 ---
 
-喜欢就点个[Star][s] ⭐
+If you like this project, press the [Star][s] ⭐
 
-[s]: https://github.com/TxTH4N/trix_GUI "别想，先写个没bug的出来"
+[s]: https://github.com/TxTH4N/trix_GUI "先写个没bug的乐色出来"
