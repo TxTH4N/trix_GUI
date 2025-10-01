@@ -19,10 +19,21 @@ Python GUIs for triple-axis neutron spectroscopy data loading, visualization, an
 
 
 ## Features
-- **`run_GUI.py`** – Load and overplot one or more runs; custom per-run colors; interactive pan/zoom toolbar; save figure.
-
+- **`run_GUI.py`**– Load and overplot one or more runs; custom per-run colors; interactive pan/zoom toolbar; save figure.
 <p float="left">
   <img src="setting.png" width=500 />
+</p>
+-Load runs: Can be single run numbers (e.g. 15). Can be multiple runs (e.g. 150-160). Can be sequense of runs separated by a fixed interval (Start#, End#, steps).
+
+-Overplot multiple runs and assign customized colors to the runs. 
+Allowed format to assign colors: C0, 3*C1, #00aa55, red... or combined any of these.
+
+-Fit: Fit with Gaussian function for one of the selected runs. Multiple peak are allowed after specifying the peak centers.
+
+Example of the overplotting:
+
+<p float="left">
+  <img src="Overplotting.png" width=500 />
 </p>
 
 - **`load_triX.py`** – Your data loader exposing class `import_triX_single` used by gui.
