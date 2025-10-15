@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
         browse_btn.clicked.connect(self.on_browse)
 
         self.instrument_edit = QLineEdit()
-        self.instrument_edit.setPlaceholderText("e.g., HB1A, CTAX, TRIAX...")
+        self.instrument_edit.setPlaceholderText("e.g., HB1A, CG4C, TRIAX...")
 
         self.exp_spin = QSpinBox()
         self.exp_spin.setRange(0, 999999)
