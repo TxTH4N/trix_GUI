@@ -173,8 +173,11 @@ class MainWindow(QMainWindow):
         self.xname_edit = QLineEdit()
         self.xname_edit.setPlaceholderText("Override x name (optional)")
 
+        # self.xname_edit.setPlaceholderText("Override x name (optional)")
         self.norm_check = QCheckBox("Normalize to counts/sec (monitor)")
         self.norm_check.setChecked(True)
+        self.norm_one = QCheckBox("Normalize to counts/sec and 1")
+        self.norm_one.setChecked(False)
 
         self.clear_check = QCheckBox("Clear plot before loading")
         self.clear_check.setChecked(True)
@@ -222,6 +225,8 @@ class MainWindow(QMainWindow):
         r += 1
         form.addWidget(self.norm_check, r, 1)
         form.addWidget(self.clear_check, r, 2)
+        r += 1
+        form.addWidget(self.norm_one, r, 1)
         r += 1
         form.addWidget(self.load_btn, r, 2)
 
@@ -310,6 +315,7 @@ class MainWindow(QMainWindow):
             temp_label = self.temp_label_edit.text().strip()
             x_override = self.xname_edit.text().strip() or None
             norm = self.norm_check.isChecked()
+            norm_to_one = self.norm_one.isChecked()
 
             if not folder or not os.path.isdir(folder):
                 raise ValueError("Please choose a valid folder.")
@@ -331,7 +337,7 @@ class MainWindow(QMainWindow):
             last_label_for_title = None
 
             for i, r in enumerate(runs):
-                label, x, y, yerr = loader.load_data(folder, r, nor_to_cps=norm, name_x=x_override)
+                label, x, y, yerr = loader.load_data(folder, r, nor_to_cps=norm, name_x=x_override, nor_1 = norm_to_one)
                 run_lbl = f"run {r:04d}"
                 self.canvas.plot_xy(x, y, yerr=yerr, label='{} - {} K'.format(run_lbl,label['temperature']), color=colors[i])
                 last_label_for_title = label

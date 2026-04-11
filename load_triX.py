@@ -20,7 +20,7 @@ class import_triX_single:
         self.x = None
         self.y = None
 
-    def load_data(self, path, run, nor_to_cps=True, name_x=None):
+    def load_data(self, path, run, nor_to_cps=True, name_x=None, nor_1 = False):
         list = []
         label = {'samplename': [], 'lattice constant': [], 'scan': [], 'x': [], 'y': [], 'mcu': [],
                  'temperature': [], 'tem_error': []}
@@ -72,12 +72,27 @@ class import_triX_single:
         avg_monitor = np.average(monitor)
         # self.mcu = float(list[0][mcu_ind])
         if nor_to_cps == True:
-            for i in range(len(list)):
-                time = float(list[i][time_ind])
-                y.append(float(list[i][y_num]) / monitor[i] * (avg_monitor / time))
-                yerr.append(np.sqrt(float(list[i][y_num])) / monitor[i] * (avg_monitor / time))
-            print("Data are normalized to counts per second using monitor!")
-            print("Counted for {} seconds per point".format(time))
+            if nor_1 == True:
+                y_befNorm = np.array([])
+                yerr_befNorm = np.array([])
+                for i in range(len(list)):
+                    time = float(list[i][time_ind])
+                    y_befNorm = np.append(y_befNorm,float(list[i][y_num]) / monitor[i] * (avg_monitor / time))
+                    yerr_befNorm = np.append(yerr_befNorm, np.sqrt(float(list[i][y_num])) / monitor[i] * (avg_monitor / time))
+                    # y.append(float(list[i][y_num]) / monitor[i] * (avg_monitor / time))
+                    # yerr.append(np.sqrt(float(list[i][y_num])) / monitor[i] * (avg_monitor / time))
+                y = y_befNorm/y_befNorm[0]
+                yerr = y*np.sqrt((yerr_befNorm/y_befNorm)**2+(yerr_befNorm[0]/y_befNorm[0])**2)
+                print("Data are normalized to counts per second using monitor!")
+                print("Data are normalized to 1 !!")
+                print("Counted for {} seconds per point".format(time))
+            else:
+                for i in range(len(list)):
+                    time = float(list[i][time_ind])
+                    y.append(float(list[i][y_num]) / monitor[i] * (avg_monitor / time))
+                    yerr.append(np.sqrt(float(list[i][y_num])) / monitor[i] * (avg_monitor / time))
+                print("Data are normalized to counts per second using monitor!")
+                print("Counted for {} seconds per point".format(time))
         elif nor_to_cps == False:
             for i in range(len(list)):
                 time = float(list[i][time_ind])
