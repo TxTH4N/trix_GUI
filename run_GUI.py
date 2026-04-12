@@ -189,7 +189,7 @@ class MainWindow(QMainWindow):
         if index >= 0:
             self.norm_combo.setCurrentIndex(index)
 
-        self.clear_check = QCheckBox("Clear plot before loading")
+        self.clear_check = QCheckBox("Clear plot(s) before loading")
         self.clear_check.setChecked(True)
 
         self.load_btn = QPushButton("Load and Overplot")
