@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
         self.clear_check = QCheckBox("Clear plot before loading")
         self.clear_check.setChecked(True)
 
-        self.load_btn = QPushButton("Load & Overplot")
+        self.load_btn = QPushButton("Load and Overplot")
         self.load_btn.clicked.connect(self.on_load)
 
         self.save_fig_btn = QPushButton("Save Figure…")
