@@ -162,8 +162,14 @@ class MainWindow(QMainWindow):
         self.run_edit = QLineEdit()
         self.run_edit.setPlaceholderText("Run(s): e.g. 12, 14, 18-21, (7, 15, 2)")
 
-        self.temp_label_edit = QLineEdit()
-        self.temp_label_edit.setPlaceholderText("Temperature column header in file (e.g., T_sample)")
+        # self.temp_label_edit = QLineEdit()
+        # self.temp_label_edit.setPlaceholderText("Temperature column header in file (e.g., T_sample)")
+        self.temp_label_combo = QComboBox()
+        self.temp_label_combo.setEditable(True)
+        self.load_labels_btn = QPushButton("Load labels")
+        # self.temp_label_combo.addItem("Manually input or Load...")
+        self.temp_label_combo.addItem("Input or Load from file...")
+        self.load_labels_btn.clicked.connect(self.load_temp_labels)
 
         self.colors_edit = QLineEdit()
         self.colors_edit.setPlaceholderText("Colors (optional): e.g. C0, 3*C1, #1f77b4, red, #00aa55, black")
@@ -173,18 +179,11 @@ class MainWindow(QMainWindow):
         self.xname_edit = QLineEdit()
         self.xname_edit.setPlaceholderText("Override x name (optional)")
 
-        # self.xname_edit.setPlaceholderText("Override x name (optional)")
-        # self.norm_check = QCheckBox("Normalize to counts/sec (monitor)")
-        # self.norm_check.setChecked(True)
-        # self.norm_one = QCheckBox("Normalize to counts/sec and 1")
-        # self.norm_one.setChecked(False)
         self.norm_label = QLabel("Normalization")
-        # self.norm_combo = QComboBox()
-        # self.norm_combo.addItems(["No normalization", "Normalize to counts/sec (monitor)", "Normalize to counts/sec and 1"])
         self.norm_combo = QComboBox()
         self.norm_combo.addItem("No normalization", "none")
         self.norm_combo.addItem("Normalize to counts/sec (monitor)", "monitor")
-        self.norm_combo.addItem("Normalize to counts/sec and 1", "one")
+        self.norm_combo.addItem("Normalize to counts/sec and first 1 (DANGER)", "one")
         index = self.norm_combo.findData("monitor")
         if index >= 0:
             self.norm_combo.setCurrentIndex(index)
@@ -214,14 +213,18 @@ class MainWindow(QMainWindow):
         form.addWidget(self.path_edit, r, 1)
         form.addWidget(browse_btn, r, 2)
         r += 1
-        form.addWidget(QLabel("Instrument"), r, 0)
-        form.addWidget(self.instrument_edit, r, 1)
-        r += 1
         form.addWidget(QLabel("Experiment #"), r, 0)
         form.addWidget(self.exp_spin, r, 1)
         r += 1
+        form.addWidget(QLabel("Instrument"), r, 0)
+        form.addWidget(self.instrument_edit, r, 1)
+        r += 1
+        # form.addWidget(QLabel("Temp label"), r, 0)
+        # form.addWidget(self.temp_label_edit, r, 1)
+        # r += 1
         form.addWidget(QLabel("Temp label"), r, 0)
-        form.addWidget(self.temp_label_edit, r, 1)
+        form.addWidget(self.temp_label_combo, r, 1)
+        form.addWidget(self.load_labels_btn, r, 2)
         r += 1
         form.addWidget(QLabel("Run numbers"), r, 0)
         form.addWidget(self.run_edit, r, 1)
@@ -297,6 +300,38 @@ class MainWindow(QMainWindow):
         if directory:
             self.path_edit.setText(directory)
 
+    def load_temp_labels(self):
+        try:
+            folder = self.path_edit.text().strip()
+            instrument = self.instrument_edit.text().strip()
+            exp = int(self.exp_spin.value())
+
+            # run_text = self.run_numbers_edit.text().strip()
+            # run = self._get_first_run_number(run_text)
+            run =1
+
+            if not folder or not instrument or run is None:
+                QMessageBox.warning(
+                    self,
+                    "Missing input",
+                    "Please fill data folder, instrument, experiment number, and run number."
+                )
+                return
+
+            loader = import_triX_single(
+                instrument=instrument,
+                exp=exp,
+                label_T=""
+            )
+            labels = loader.get_available_labels(folder, run)
+            if not labels:
+                QMessageBox.warning(self, "No labels found", "Could not find labels in the file.")
+                return
+            self.temp_label_combo.clear()
+            self.temp_label_combo.addItems(labels)
+        except Exception as e:
+            QMessageBox.critical(self, "Load labels failed", str(e))
+
     def on_pick_colors(self):
         try:
             runs = parse_runs(self.run_edit.text().strip())
@@ -323,7 +358,8 @@ class MainWindow(QMainWindow):
             exp = int(self.exp_spin.value())
             run_spec = self.run_edit.text().strip()
             color_spec = self.colors_edit.text().strip()
-            temp_label = self.temp_label_edit.text().strip()
+            # temp_label = self.temp_label_edit.text().strip()
+            temp_label = self.temp_label_combo.currentText().strip()
             x_override = self.xname_edit.text().strip() or None
             # norm = self.norm_check.isChecked()
             # norm_to_one = self.norm_one.isChecked()

@@ -20,6 +20,21 @@ class import_triX_single:
         self.x = None
         self.y = None
 
+    def get_available_labels(self, path, run):
+        folder = path
+        str_exp = f"{self.exp:04d}"
+        str_run = f"{run:04d}"
+        file_name = (
+            f"{folder}/exp{self.exp}/Datafiles/"
+            f"{self.instrument}_exp{str_exp}_scan{str_run}.dat"
+        )
+        with open(file_name, "r") as f:
+            for raw_line in f:
+                line = raw_line.split()
+                if line and line[0] == "#" and len(line) > 1 and line[1] == "Pt.":
+                    return line[2:]
+        return []
+
     def load_data(self, path, run, nor_to_cps=True, name_x=None, nor_1 = False):
         list = []
         label = {'samplename': [], 'lattice constant': [], 'scan': [], 'x': [], 'y': [], 'mcu': [],
