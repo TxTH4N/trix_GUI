@@ -166,7 +166,7 @@ class MainWindow(QMainWindow):
         # self.temp_label_edit.setPlaceholderText("Temperature column header in file (e.g., T_sample)")
         self.temp_label_combo = QComboBox()
         self.temp_label_combo.setEditable(True)
-        self.load_labels_btn = QPushButton("Load labels")
+        self.load_labels_btn = QPushButton("Load labels...")
         # self.temp_label_combo.addItem("Manually input or Load...")
         self.temp_label_combo.addItem("Input or Load from file...")
         self.load_labels_btn.clicked.connect(self.load_temp_labels)
