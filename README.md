@@ -3,6 +3,9 @@
 Python GUIs for triple axis neutron spectroscopy data loading, visualization, and peak fitting.
 
 [//]: # (Author: Tianxiong Han, Iowa State University, 2025 Aug 24)
+## New (v0.2.2)
+- Add the function of loading the label for temperatures from the ASCII file. Users are allowed to choose the proper one from the dropdown options, as well as input the desired label.
+- Modified the order of the input box for Experiment number and Instrument, as it is more natural to remember the experiment number while choosing the Data folder.
 
 ## New (v0.2.1)
 - Allow to change the pannel height ratios between setting, plotting, and fit reports.
@@ -15,11 +18,17 @@ Python GUIs for triple axis neutron spectroscopy data loading, visualization, an
 ## Features
 - **`run_GUI.py`**– Load and overplot one or more runs; custom per-run colors; interactive pan/zoom toolbar; save figure.
 <p float="left">
-  <img src="setting.png" width=500 />
+  <img src="Interference.png" width=500 />
 </p>
+-Load temperature labels: After loading the labels, users are allowed to choose the proper labels from the dropdown menu.
+<p float="left">
+  <img src="temp_labels.png" width=500 />
+</p>
+
 -Load runs: Can be single run numbers (e.g. 15). Can be multiple runs (e.g. 150-160). Can be sequense of runs separated by a fixed interval (Start#, End#, steps).
 
--Overplot multiple runs and assign customized colors to the runs. 
+-Overplot multiple runs and assign customized colors to the runs.
+**Multiple runs from different folders** are allowed if "Clear plot before loading" is not checked.
 Allowed format to assign colors: C0, 3*C1, #00aa55, red... or combined any of these.
 
 Example of the overplotting:
