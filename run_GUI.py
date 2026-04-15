@@ -132,8 +132,9 @@ class MplCanvas(FigureCanvas):
             self.ax.set_title(title)
         if xlabel:
             self.ax.set_xlabel(xlabel)
-        if ylabel:
-            self.ax.set_ylabel(ylabel)
+        if ylabel == 'detector':
+            ylabel = 'Intensity'
+        self.ax.set_ylabel(ylabel)
         if self.ax.get_legend_handles_labels()[0]:
             self.ax.legend(frameon=False)
         self.fig.canvas.draw_idle()
