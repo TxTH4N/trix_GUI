@@ -127,11 +127,13 @@ class MplCanvas(FigureCanvas):
         self.ax.set_ylabel("Intensity")
         self.ax.grid(True, which='both', alpha=0.3, linestyle='--')
 
-    def refresh(self, title: str = "",xlabel:str="X"):
+    def refresh(self, title: str = "",xlabel:str="X", ylabel:str="Intensity"):
         if title:
             self.ax.set_title(title)
         if xlabel:
             self.ax.set_xlabel(xlabel)
+        if ylabel:
+            self.ax.set_ylabel(ylabel)
         if self.ax.get_legend_handles_labels()[0]:
             self.ax.legend(frameon=False)
         self.fig.canvas.draw_idle()
@@ -178,6 +180,8 @@ class MainWindow(QMainWindow):
 
         self.xname_edit = QLineEdit()
         self.xname_edit.setPlaceholderText("Override x name (optional)")
+        self.yname_edit = QLineEdit()
+        self.yname_edit.setPlaceholderText("Override y name (optional)")
 
         self.norm_label = QLabel("Normalization")
         self.norm_combo = QComboBox()
@@ -233,8 +237,20 @@ class MainWindow(QMainWindow):
         form.addWidget(self.colors_edit, r, 1)
         form.addWidget(pick_colors_btn, r, 2)
         r += 1
+        # form.addWidget(QLabel("X name (optional)"), r, 0)
+        # form.addWidget(self.xname_edit, r, 1)
+        # r += 1
+        xy_widget = QWidget()
+        xy_layout = QHBoxLayout(xy_widget)
+        xy_layout.setContentsMargins(0, 0, 0, 0)
+        xy_layout.setSpacing(10)
+        xy_layout.addWidget(self.xname_edit, 1)
         form.addWidget(QLabel("X name (optional)"), r, 0)
-        form.addWidget(self.xname_edit, r, 1)
+        y_label = QLabel("Y name (optional)")
+        y_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        xy_layout.addWidget(y_label)
+        xy_layout.addWidget(self.yname_edit, 1)
+        form.addWidget(xy_widget, r, 1, 1, 2)
         r += 1
         form.addWidget(self.norm_label, r, 0)
         form.addWidget(self.norm_combo, r, 1)
@@ -293,6 +309,7 @@ class MainWindow(QMainWindow):
         self._last_loaded = None  # type: Optional[dict]
         self._data_by_run: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray, dict]] = {}
         self._xlabel_current = "X"
+        self._ylabel_current = "Y"
 
     # --- UI Actions ---
     def on_browse(self):
@@ -361,6 +378,7 @@ class MainWindow(QMainWindow):
             # temp_label = self.temp_label_edit.text().strip()
             temp_label = self.temp_label_combo.currentText().strip()
             x_override = self.xname_edit.text().strip() or None
+            y_override = self.yname_edit.text().strip() or None
             # norm = self.norm_check.isChecked()
             # norm_to_one = self.norm_one.isChecked()
             norm_mode = self.norm_combo.currentText()
@@ -395,20 +413,21 @@ class MainWindow(QMainWindow):
                 elif norm_mode == "one":
                     norm = True
                     norm_to_one = True
-                label, x, y, yerr = loader.load_data(folder, r, nor_to_cps=norm, name_x=x_override, nor_1 = norm_to_one)
+                label, x, y, yerr = loader.load_data(folder, r, nor_to_cps=norm, name_x=x_override,name_y=y_override ,nor_1 = norm_to_one)
                 run_lbl = f"run {r:04d}"
                 self.canvas.plot_xy(x, y, yerr=yerr, label='{} - {} K'.format(run_lbl,label['temperature']), color=colors[i])
                 last_label_for_title = label
                 # cache data for fit
                 self._data_by_run[r] = (np.asarray(x), np.asarray(y), np.asarray(yerr), label)
                 self._xlabel_current = label.get('x', 'X')
+                self._ylabel_current = label.get('y', 'Y')
 
             title = ""
             if last_label_for_title:
                 # title = f"{last_label_for_title.get('samplename','')}  T={last_label_for_title.get('temperature','?')}±{last_label_for_title.get('tem_error','?')} K"
                 title = f"{last_label_for_title.get('samplename', '')} Run(s) {run_spec}"
             # self.canvas.refresh(title=title,xlabel=label['x'])
-            self.canvas.refresh(title=title, xlabel=self._xlabel_current)
+            self.canvas.refresh(title=title, xlabel=self._xlabel_current,ylabel=self._ylabel_current)
 
             self._last_loaded = {
                 'instrument': instrument, 'exp': exp, 'runs': runs,
@@ -509,7 +528,7 @@ class MainWindow(QMainWindow):
                     if name.startswith('g'):
                         self.canvas.ax.plot(x, ycomp, lw=1, alpha=0.8, label=f"{name[:-1]} (run {run_id:04d})")
 
-            self.canvas.refresh(title=self.canvas.ax.get_title(), xlabel=self._xlabel_current)
+            self.canvas.refresh(title=self.canvas.ax.get_title(), xlabel=self._xlabel_current, ylabel=self._ylabel_current)
             self.statusBar().showMessage(f"Fit run {run_id:04d} complete. redχ²={result.redchi:.3g}", 6000)
             # msg = "\n".join(
             #     f"{name}: {par.value:.4g} ± {par.stderr:.2g}" if par.stderr is not None else f"{name}: {par.value:.4g}"

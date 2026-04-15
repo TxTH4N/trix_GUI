@@ -35,7 +35,7 @@ class import_triX_single:
                     return line[2:]
         return []
 
-    def load_data(self, path, run, nor_to_cps=True, name_x=None, nor_1 = False):
+    def load_data(self, path, run, nor_to_cps=True, name_x=None,name_y = None, nor_1 = False):
         list = []
         label = {'samplename': [], 'lattice constant': [], 'scan': [], 'x': [], 'y': [], 'mcu': [],
                  'temperature': [], 'tem_error': []}
@@ -64,7 +64,12 @@ class import_triX_single:
                 else:
                     label['x'] = name_x
             elif line[1] == 'def_y':
-                label['y'] = line[-1]
+                if name_y is None:
+                    label['y'] = line[-1]
+                else:
+                    label['y'] = name_y
+                    nor_to_cps = False
+                    print("Speficy a non-intensity Y variable, normalization to monitor is N/A now.")
             elif line[1] == 'samplename':
                 label['samplename'] = line[-1]
             elif line[1] == 'scan':
@@ -112,7 +117,8 @@ class import_triX_single:
             for i in range(len(list)):
                 time = float(list[i][time_ind])
                 y.append(float(list[i][y_num]))
-                yerr.append(np.sqrt(float(list[i][y_num])))
+                validYerr = 1 if name_y is None else 0
+                yerr.append(np.sqrt(float(list[i][y_num]))*validYerr)
             self.nor_to_cps = False
             print("Data are NOT normalized to counts per second!")
             print("Counted for {} seconds per point".format(time))
